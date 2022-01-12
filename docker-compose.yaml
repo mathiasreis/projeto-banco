@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  postgres_service:
+    image: postgres:9.6
+    container_name: bank_container
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+# docker run -d -p 5432:5432
+# --name nome_container
