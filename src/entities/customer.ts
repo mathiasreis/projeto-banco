@@ -5,8 +5,8 @@ export class Customer {
 
   public cpf: string;
 
-  constructor(name: string, cpf: string) {
-    this.id = Math.floor(Math.random() * 100);
+  constructor(name: string, cpf: string, id?: number) {
+    this.id = id ?? Math.floor(Math.random() * 100);
     this.name = name;
     this.cpf = cpf;
   }

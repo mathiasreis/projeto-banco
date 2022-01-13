@@ -5,15 +5,17 @@ const app = express();
 app.use(express.json());
 const accountController = new AccountController();
 
-app.post('/account', (req, res) => accountController.createAccount(req, res));
+app.post('/account', async (req, res) => accountController.createAccount(req, res));
 
-app.get('/account', (req, res) => accountController.getAll(req, res));
+app.get('/account', async (req, res) => accountController.getAll(req, res));
 
-app.patch('/account/:cpf', (req, res) =>
+app.get('/account/:id', async (req, res) => accountController.getAccount(req, res));
+
+app.put('/account/:id', async (req, res) =>
   accountController.updateAccount(req, res),
 );
 
-app.delete('/account/:cpf', (req, res) =>
+app.delete('/account/:id', async (req, res) =>
   accountController.deleteAccount(req, res),
 );
 

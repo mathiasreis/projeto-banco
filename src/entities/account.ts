@@ -7,9 +7,9 @@ export class Account {
 
   public balance: number;
 
-  constructor(name: string, cpf: string, balance: number) {
-    this.id = Math.floor(Math.random() * 1000);
-    this.customer = new Customer(name, cpf);
+  constructor(customer: Customer, balance: number, id?: number) {
+    this.id = id ?? Math.floor(Math.random() * 1000);
+    this.customer = customer;
     this.balance = balance;
   }
 

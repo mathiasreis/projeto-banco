@@ -1,18 +1,22 @@
 import { Request, Response } from 'express';
-import { Account } from '../entities/account';
 import { AccountRepository } from '../repositories/account-repository';
+import { AccountService } from '../services/account-service';
 
 export class AccountController {
   private accountRepository: AccountRepository;
+  private accountService: AccountService;
 
   constructor() {
     this.accountRepository = new AccountRepository();
+    this.accountService = new AccountService();
   }
 
-  createAccount(req: Request, res: Response) {
+  async createAccount(req: Request, res: Response) {
     const { name, cpf, balance } = req.body;
-    const account = new Account(name, cpf, balance);
-    this.accountRepository.insert(account);
+    // const customer = new Customer(name, cpf);
+    // const account = new Account(customer, balance);
+    // this.accountRepository.insert(account);
+    const account = await this.accountService.create(name, cpf, balance);
     res.status(201).json({
       id_account: account.id,
       id_customer: account.customer.id,
@@ -22,19 +26,22 @@ export class AccountController {
     });
   }
 
-  updateAccount(req: Request, res: Response) {
-    const { cpf } = req.params;
+  async getAccount(req: Request, res: Response) {
+    const { id } = req.params;
+    const account = await this.accountService.getAccountByCustomerId(Number(id));
+    if(account instanceof Error) {
+      return res.status(404).json({ message: account.message });
+    }
+    return res.status(200).json(account);
+  }
+
+  async updateAccount(req: Request, res: Response) {
+    const { id } = req.params;
     const { value, type } = req.body;
-    const account = this.accountRepository.findByCpf(cpf);
     const amount = Number(value);
-    if (!account) {
-      return res.status(404).json({ mensagem: 'Conta não encontrada' });
-    }
-    if (type === 'withdrawal' && amount > account.balance) {
-      this.accountRepository.updateBalance(account, cpf, amount, type);
-    }
-    if (type === 'deposit' && amount > 0) {
-      this.accountRepository.updateBalance(account, cpf, amount, type);
+    const account = await this.accountService.update(Number(id), type, amount);
+    if(account instanceof Error) {
+      return res.status(404).json({ message: account.message });
     }
     return res.status(200).json({
       id_account: account.id,
@@ -46,19 +53,17 @@ export class AccountController {
   }
 
   deleteAccount(req: Request, res: Response) {
-    const { cpf } = req.params;
-    const account = this.accountRepository.findByCpf(cpf);
-    if (!account) {
-      return res.status(404).json({
-        mensagem: 'Conta não encontrada',
-      });
+    const { id } = req.params;
+    const account = this.accountService.remove(Number(id));
+    if(account instanceof Error) {
+      return res.status(404).json({ message: account.message });
     }
-    const deletedAccount = this.accountRepository.remove(cpf);
-    return res.status(204).send({ deleted: deletedAccount });
+    // const deletedAccount = this.accountRepository.remove(cpf);
+    return res.status(204).send({ deleted: account });
   }
 
-  getAll(req: Request, res: Response) {
-    const accounts = this.accountRepository.findAll();
+  async getAll(req: Request, res: Response) {
+    const accounts = await this.accountService.getAll();
     return res.status(200).json(accounts);
   }
 

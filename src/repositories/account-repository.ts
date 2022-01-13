@@ -1,38 +1,118 @@
+import { PrismaClient } from '@prisma/client';
 import { Account } from '../entities/account';
+import { Customer } from '../entities/customer';
 
 export class AccountRepository {
-  private accounts: Account[];
+  private prisma;
+  // private accounts: Account[];
+  
 
   constructor() {
-    this.accounts = [];
+    this.prisma = new PrismaClient();
+    // this.accounts = [];
   }
 
-  insert(account: Account) {
-    this.accounts.push(account);
+  async insert(account: Account): Promise<void> {
+    await this.prisma.customer.create({
+      data: {
+        id: account.customer.id,
+        name: account.customer.name,
+        cpf: account.customer.cpf,
+        Account: {
+          create: {
+            id: account.id,
+            balance: account.balance
+          }
+        }
+      }
+    })
+    // this.accounts.push(account);
   }
 
-  findByCpf(cpf: string): Account | undefined {
-    return this.accounts.find((p) => p.customer.cpf === cpf);
-  }
+  // async findCustomer(cpf: string): Promise<Customer | undefined> {
+  //   // return this.accounts.find((p) => p.customer.cpf === cpf);
+  //   const result = await this.prisma.customer.findFirst({
+  //     where: {
+  //       cpf,
+  //     }
+  //   });
+  //   if(!result) {
+  //     return undefined;
+  //   }
+  //   return new Customer(result.name, result.cpf);
+  // }
 
-  updateBalance(account: Account, cpf: string, amount: number, type: string) {
-    // const account = this.findByCpf(cpf) as Account;
-    this.accounts = this.accounts.filter((p) => p.customer.cpf !== cpf);
-    if (type === 'deposit') {
-      account.setDeposity(amount);
+  async findAccount(id: number): Promise<Account | undefined> {
+    const resultAcc = await this.prisma.account.findFirst({
+      where: {
+        "customerId": id,
+      }
+    });
+    if(!resultAcc) {
+      return undefined;
     }
-    if (type === 'withdrawal') {
-      account.setWithdrawal(amount);
+    
+    const resultCust = await this.prisma.customer.findFirst({
+      where: {
+        id: resultAcc.customerId,
+      }
+    });
+    if(!resultCust) {
+      return undefined;
     }
-    this.accounts.push(account);
+    
+    const customer = new Customer(resultCust.name, resultCust.cpf, resultCust.id);
+    return new Account(customer, resultAcc.balance, resultAcc.id);
   }
 
-  remove(cpf: string) {
-    const index = this.accounts.findIndex((p) => p.customer.cpf === cpf);
-    return this.accounts.splice(index, 1);
+  async updateBalance(id: number, type: string, amount: number): Promise<Account | undefined> {
+    const result = await this.findAccount(id);
+    if(!result) {
+      return undefined;
+    }
+
+    if (type === 'withdrawal' && amount < result.balance) {
+      const newBalance = (result.balance) - amount;
+      await this.prisma.account.update({
+        data: {
+          balance: newBalance,
+        },
+        where: {
+          id: result.id,
+        },
+      });
+      return new Account(result.customer, newBalance, result.id);
+    }
+    if (type === 'deposit' && amount > 0) {
+      const newBalance = (result.balance) + amount;
+      await this.prisma.account.update({
+        data: {
+          balance: newBalance,
+        },
+        where: {
+          id: result.id,
+        },
+      });
+      return new Account(result.customer, newBalance, result.id);
+    }
+
   }
 
-  findAll() {
-    return this.accounts;
+  async removeAccount(id: number): Promise<Account | undefined> {
+    const result = await this.findAccount(id);
+    if(!result) {
+      return undefined;
+    }
+    await this.prisma.account.delete({
+      where: {
+        id: result.id,
+      }
+    });
+    return new Account(result.customer, result.balance, result.id); 
+  }
+
+  async findAll() {
+    return this.prisma.account.findMany();
+    
   }
 }
