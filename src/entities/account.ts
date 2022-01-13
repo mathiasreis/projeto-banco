@@ -1,14 +1,14 @@
 import { Customer } from './customer';
 
 export class Account {
-  public id: string;
+  public id: number;
 
   public customer: Customer;
 
   public balance: number;
 
   constructor(name: string, cpf: string, balance: number) {
-    this.id = Math.floor(Math.random() * 100).toString();
+    this.id = Math.floor(Math.random() * 1000);
     this.customer = new Customer(name, cpf);
     this.balance = balance;
   }
